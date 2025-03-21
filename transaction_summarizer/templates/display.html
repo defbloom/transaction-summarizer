@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>Data Summary</h1>
+            <div>
+                <a href="/" class="btn btn-secondary">Upload Another File</a>
+                <a href="/export_csv/{{ filename }}" class="btn btn-primary">Export as CSV</a>
+                <a href="/export_xlsx/{{ filename }}" class="btn btn-primary">Export as XLX</a>
+                <a href="/export_pdf/{{ filename }}" class="btn btn-primary">Export PDF</a>
+            </div>
+        </div>
+
+        <p class="text-muted">Here is the summary of your uploaded data:</p>
+
+        <!-- Skipped Rows Message -->
+        {% if summary.skipped_count > 0 %}
+        <div class="alert alert-warning">
+            <strong>Note:</strong> {{ summary.skipped_count }} invalid rows were excluded due to not fulfilling the requirements.
+            <details>
+                <summary>View skipped rows</summary>
+                <ul>
+                    {% for row in summary.skipped_rows %}
+                    <li>{{ row | tojson }}</li>
+                    {% endfor %}
+                </ul>
+            </details>
+        </div>
+        {% endif %}
+
+        <!-- Table for Total Values -->
+        <h3>Total Statistics</h3>
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in summary.totals %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="row">
+            <!-- Pie Chart -->
+            <div class="col-md-6">
+                <h4>
+                    Proportion of Income vs. Expenses (Pie Chart)
+                    <i class="bi bi-eye toggle-chart ms-2" data-target="pieChart"></i>
+                </h4>
+                <canvas id="pieChart"></canvas>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="col-md-6">
+                <h4>
+                    Comparison of Total Values (Bar Chart)
+                    <i class="bi bi-eye toggle-chart ms-2" data-target="barChart"></i>
+                </h4>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <div class="mb-4"></div>
+
+        <!-- Table for Monthly Data -->
+        <h3>Monthly Income and Expenses</h3>
+        <div class="text-muted small">
+            <p class="mb-0">The "Net Savings %" shows the relationship between income and expenses each month:</p>
+            <ul class="mb-0">
+                <li>A positive percentage indicates savings, calculated from the net total divided by total income and multiplied by 100.</li>
+                <li>A negative percentage indicates overspending, calculated from the net total divided by total expenses and multiplied by 100.</li>
+                <li>If income or expenses are zero, the non-zero component times 100 becomes the percentage.</li>
+            </ul>
+        </div>
+        <div class="mb-2"></div>
+        <!-- Filter by Year -->
+        <div class="d-flex justify-content-center align-items-center mb-4">
+            <label for="yearFilter" class="form-label text-dark fw-bold me-2 mb-0">Filter by Year:</label>
+            <select id="yearFilter" class="form-select" style="width: auto; ">
+                <option value="all">All Years</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Income</th>
+                    <th>Expenses</th>
+                    <th>Net Total</th>
+                    <th>Net Savings %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in summary.monthly_rows %}
+                <tr>
+                    {% for cell in row %}
+                    <td>
+                    {% if loop.index0 == 3 %}  <!-- Net Total Column -->
+                        {% if cell == "N/A" %}
+                            {{ cell }}
+                        {% elif cell | float == cell | int %}
+                            {{ cell | int }}  <!-- Net Total (No %) -->
+                        {% else %}
+                            {{ cell | round(2) }}  <!-- Net Total (No %) -->
+                        {% endif %}
+                    {% elif loop.index0 == 4 %}  <!-- Net Savings % Column -->
+                        {% if cell | float == cell | int %}
+                            {{ cell | int }}%  <!-- Add % -->
+                        {% else %}
+                            {{ cell | round(2) }}%  <!-- Add % -->
+                        {% endif %}
+                    {% elif loop.index0 > 0 %}
+                        {% if cell | float == cell | int %}
+                            {{ cell | int }}
+                        {% else %}
+                            {{ cell | round(2) }}
+                        {% endif %}
+                    {% else %}
+                        {{ cell }}  <!-- Month -->
+                    {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="row">
+            <!-- Grouped Bar Chart -->
+            <div class="col-12">
+                <h4 class="d-flex justify-content-center align-items-center mb-4">
+                    Monthly Income and Expenses (Grouped Bar Chart)
+                    <i class="bi bi-eye toggle-chart ms-2" data-target="groupedBarChart-container"></i>
+                </h4>
+                <div id="groupedBarChart-container" style="display: none; text-align: center;">
+                    <canvas id="groupedBarChart"></canvas>
+                    <button id="resetZoomBar" class="btn btn-primary mt-3">Reset Zoom</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Line Chart -->
+            <div class="col-12">
+                <h4 class="d-flex justify-content-center align-items-center mb-4">
+                    Income, Expenses, and Net Total Over Time (Line Chart)
+                    <i class="bi bi-eye toggle-chart ms-2" data-target="lineChart-container"></i>
+                </h4>
+                <div id="lineChart-container" style="display: none; text-align: center;">
+                    <canvas id="lineChart"></canvas>
+                    <button id="resetZoomLine" class="btn btn-primary mt-3">Reset Zoom</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table for Average Statistics -->
+        <h3>Average Statistics</h3>
+        <div class="text-muted small">
+            <p class="mb-0">The averages are derived by dividing the total income or expenses by the number of days, weeks, months, or years present within the data.</p>
+            <p class="mb-0">Missing gaps will affect the averages, so the completeness of your data should be taken into account.</p>
+        <p class="mb-0">For example, for the daily average, instead of counting the whole 365 days, it only counts days in which atleast one transaction occurred.</p>
+        </div>
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in summary.averages %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Horizontal Bar Chart -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h4 class="d-flex justify-content-center align-items-center mb-4">
+                    Comparison of Average Statistics (Bar Char)
+                    <i class="bi bi-eye-slash toggle-chart ms-2" data-target="horizontalBarChart-container"></i>
+                </h4>
+                <div id="horizontalBarChart-container" style="display: none; text-align: center;">
+                    <canvas id="horizontalBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <a href="/" class="btn btn-secondary">Upload Another File</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+
+    <!-- Monthly Table -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const monthlyTable = document.querySelector("table.table-striped:nth-of-type(2) tbody");
+            const yearFilter = document.getElementById("yearFilter");
+
+            const allMonthsRows = [...monthlyTable.querySelectorAll("tr")];
+            const yearGroups = {};
+
+            // Group rows by year
+            allMonthsRows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                const month = cells[0]?.textContent.trim(); // Assuming the first column is the month (YYYY-MM)
+                if (month) {
+                    const year = month.split("-")[0];
+                    if (!yearGroups[year]) yearGroups[year] = [];
+                    yearGroups[year].push(row);
+                }
+            });
+
+            // Populate dropdown with years
+            Object.keys(yearGroups).sort().forEach(year => {
+                const option = document.createElement("option");
+                option.value = year;
+                option.textContent = year;
+                yearFilter.appendChild(option);
+            });
+
+            // Filter rows by selected year
+            yearFilter.addEventListener("change", () => {
+                const selectedYear = yearFilter.value;
+                monthlyTable.innerHTML = ""; // Clear table
+
+                if (selectedYear === "all") {
+                    // Show all rows
+                    allMonthsRows.forEach(row => monthlyTable.appendChild(row));
+                } else {
+                    // Show rows for the selected year
+                    const rowsForYear = yearGroups[selectedYear] || [];
+                    rowsForYear.forEach(row => monthlyTable.appendChild(row));
+                }
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Select all toggle icons and their target charts
+            const toggleIcons = document.querySelectorAll(".toggle-chart");
+
+            toggleIcons.forEach(icon => {
+                const targetId = icon.getAttribute("data-target");
+                const container = document.getElementById(targetId);
+                const canvas = container.querySelector('canvas');
+
+                // Ensure charts are hidden and icons are set correctly on load
+                container.style.display = "none";
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
+
+                // Add click event listener to toggle visibility
+                icon.addEventListener("click", () => {
+                    if (container.style.display === "none") {
+                        container.style.display = "block"; // Show the container
+                        icon.classList.remove("bi-eye-slash");
+                        icon.classList.add("bi-eye"); // Change icon to "eye"
+
+                        // Ensure chart instance is properly updated
+                        const chartId = canvas.id;
+                        const chartInstance = Chart.getChart(chartId);
+                        if (chartInstance) {
+                            chartInstance.resize(); // Force resize
+                            chartInstance.update(); // Update chart rendering
+                        }
+                    } else {
+                        container.style.display = "none"; // Hide the container
+                        icon.classList.remove("bi-eye");
+                        icon.classList.add("bi-eye-slash"); // Change icon to "eye-slash"
+                    }
+                });
+            });
+
+            // Add Reset Zoom functionality for each chart
+            document.getElementById('resetZoomBar').addEventListener('click', () => {
+                const groupedBarChart = Chart.getChart("groupedBarChart");
+                groupedBarChart.resetZoom();
+            });
+
+            document.getElementById('resetZoomLine').addEventListener('click', () => {
+                const lineChart = Chart.getChart("lineChart");
+                lineChart.resetZoom();
+            });
+        });
+    </script>
+
+    <script>
+    Chart.register({
+        id: 'minBarHeight',
+        beforeDatasetsDraw(chart) {
+            const { ctx, scales } = chart;
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                const meta = chart.getDatasetMeta(datasetIndex);
+                meta.data.forEach(bar => {
+                    const minHeight = 5; // Minimum height for bars
+                    const originalHeight = bar.height;
+                    if (originalHeight < minHeight && originalHeight > 0) {
+                        const diff = minHeight - originalHeight;
+                        bar.height += diff;
+                        bar.y -= diff; // Adjust position upwards
+                    }
+                });
+            });
+        },
+    });
+    </script>
+
+    <script>
+        // Data from Flask (replace placeholders with the actual passed values)
+        const totalIncome = {{ summary.totals[0][1] }};
+        const totalExpenses = {{ summary.totals[1][1] }};
+        const netTotal = {{ summary.totals[2][1] }};
+
+        // Pie Chart (Income vs. Expenses)
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Income', 'Expenses'],
+                datasets: [{
+                    data: [totalIncome, Math.abs(totalExpenses)], // Use absolute value for expenses
+                    backgroundColor: ['#4caf50', '#f44336'], // Green for income, red for expenses
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw.toLocaleString()}` } }
+                }
+            }
+        });
+
+        // Bar Chart (Total Values)
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Total Income', 'Total Expenses', 'Net Total'],
+                datasets: [{
+                    label: 'Amount',
+                    data: [totalIncome, totalExpenses, netTotal],
+                    backgroundColor: ['#4caf50', '#f44336', '#2196f3'], // Colors for bars
+                    barThickness: 10
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => value.toLocaleString() // Format y-axis numbers
+                        }
+                    }
+                },
+                plugins: {
+                    datalabels: {
+                        display: true, // Show the data labels
+                        align: 'end', // Align them at the end of each bar
+                        color: '#000', // Black color for labels
+                        formatter: (value) => value.toLocaleString() // Format the value
+                    },
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toLocaleString()}` } }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        // Monthly Data (replace these with actual passed data from Flask)
+        const monthlyData = {{ summary.monthly_rows | tojson }};
+        const months = monthlyData.map(row => row[0]); // Month column
+        const incomes = monthlyData.map(row => row[1]); // Income column
+        const expensesBarChart = monthlyData.map(row => Math.abs(row[2])); // Expenses column (absolute for bar chart)
+        const expensesLineChart = monthlyData.map(row => -Math.abs(row[2])); // Expenses column (negative for line chart)
+        const netTotals = monthlyData.map(row => row[3]); // Net Total column
+
+        // Grouped Bar Chart: Income vs. Expenses
+        const groupedBarCtx = document.getElementById('groupedBarChart').getContext('2d');
+        const groupedBarChart = new Chart(groupedBarCtx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomes,
+                        backgroundColor: '#4caf50', // Green
+                        barThickness: 10
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expensesBarChart,
+                        backgroundColor: '#f44336', // Red
+                        barThickness: 10
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true }, // Enable zooming with the mouse wheel
+                            pinch: { enabled: true }, // Enable zooming with touch gestures
+                            mode: 'x', // Zoom along the x-axis
+                        },
+                        pan: {
+                            enabled: true, // Allow panning
+                            mode: 'x', // Pan along the x-axis
+                        },
+                    },
+                    legend: { display: true, position: 'top' },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toLocaleString()}` } }
+                },
+                scales: {
+                    x: { stacked: false },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => value.toLocaleString()
+                        }
+                    }
+                }
+            }
+        });
+
+        // Line Chart: Trends Over Time
+        const lineCtx = document.getElementById('lineChart').getContext('2d');
+        const lineChart = new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomes,
+                        borderColor: '#4caf50',
+                        backgroundColor: '#4caf50',
+                        fill: false,
+                        tension: 0.1,
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expensesLineChart,
+                        borderColor: '#f44336',
+                        backgroundColor: '#f44336',
+                        fill: false,
+                        tension: 0.1,
+                    },
+                    {
+                        label: 'Net Total',
+                        data: netTotals,
+                        borderColor: '#2196f3',
+                        backgroundColor: '#2196f3',
+                        fill: false,
+                        tension: 0.1,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true }, // Enable zooming with the mouse wheel
+                            pinch: { enabled: true }, // Enable zooming with touch gestures
+                            mode: 'x', // Zoom along the x-axis
+                        },
+                        pan: {
+                            enabled: true, // Allow panning
+                            mode: 'x', // Pan along the x-axis
+                        },
+                    },
+
+                    legend: { display: true, position: 'top' },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toLocaleString()}` } }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => value.toLocaleString()
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Average Statistics Data
+            const avgLabels = ["Yearly Income", "Yearly Expenses", "Monthly Income", "Monthly Expenses", "Weekly Income", "Weekly Expenses", "Daily Income", "Daily Expenses"];
+
+            // Dynamically populate avgValues from the averages passed from the server
+            const avgValues = {{ summary.averages | tojson }}.map(item => item[1]);
+            const avgColors = avgValues.map(value => value > 0 ? "rgba(75, 192, 192, 0.8)" : "rgba(255, 99, 132, 0.8)");
+
+            // Horizontal Bar Chart
+            const ctxHorizontalBar = document.getElementById("horizontalBarChart").getContext("2d");
+            new Chart(ctxHorizontalBar, {
+                type: "bar",
+                data: {
+                    labels: avgLabels,
+                    datasets: [{
+                        label: "Average Value",
+                        data: avgValues,
+                        backgroundColor: avgColors,
+                        borderColor: avgColors.map(color => color.replace("0.8", "1")),
+                        borderWidth: 1,
+                        barThickness: 10
+                    }],
+                },
+                options: {
+                    indexAxis: "y", // Horizontal bar chart
+                    responsive: true,
+                    plugins: {
+                        datalabels: {
+                            display: true,
+                            align: 'end',
+                            color: '#000',
+                            formatter: (value) => value.toLocaleString(),
+                        },
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (tooltipItem) {
+                                    return `${tooltipItem.raw > 0 ? "+" : ""}${tooltipItem.raw.toFixed(2)}`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Value",
+                            },
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Metric",
+                            },
+                        },
+                    },
+                },
+            });
+        });
+    </script>
+</body>
+</html>

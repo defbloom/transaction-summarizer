@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container text-center mt-5">
+        <h1>Welcome to Data Summarizer</h1>
+        <p class="lead mt-3">Easily upload your data, view a summary, and export it!</p>
+    </div>
+
+    <div class="container mt-5">
+        <h2 class="text-center">Upload Your Data</h2>
+        <p class="text-muted text-center">Upload a link to your valid CSV file to analyze your data.</p>
+
+        <!-- Centered Form -->
+        <form method="post" class="d-flex flex-column align-items-center">
+            <div class="mb-3 w-50">
+                <input type="url" class="form-control text-center" id="csv_url" name="csv_url" placeholder="https://example.com/data.csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+
+        <!-- Accordion for Requirements, Image, and Instructions -->
+        <div class="accordion my-4" id="csvAccordion">
+
+            <!-- Sample CSV Image Accordion -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingImage">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseImage" aria-expanded="false" aria-controls="collapseImage">
+                        Sample CSV Format
+                    </button>
+                </h2>
+                <div id="collapseImage" class="accordion-collapse collapse" aria-labelledby="headingImage" data-bs-parent="#csvAccordion">
+                    <div class="accordion-body text-center">
+                        <p class="mb-4">Here is an example of the expected CSV file format:</p>
+                        <img src="https://imgur.com/UUvK2iy.png" alt="Sample CSV Format" class="img-fluid mt-3">
+                        <br><br>
+                        <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQvuEDY-2f9KpIBuqMzjEbS0IJepwnkhysv9YKSq7jw-66q-gHo-0u6O04vb6vSqYeJ8EMSwz_mfxN6/pub?gid=0&single=true&output=csv" class="btn btn-primary" target="_blank" download>
+                            Download Sample CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Requirements Accordion -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingRequirements">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRequirements" aria-expanded="false" aria-controls="collapseRequirements">
+                        File Requirements
+                    </button>
+                </h2>
+                <div id="collapseRequirements" class="accordion-collapse collapse" aria-labelledby="headingRequirements" data-bs-parent="#csvAccordion">
+                    <div class="accordion-body">
+                        <ul>
+                            <li>The file must be in CSV (Comma Separated Values) format.</li>
+                            <li>Required columns: <code>Date</code>, <code>Amount</code>. Make sure they are spelled and alphabetized correctly. </li>
+                            <li><strong>Date</strong>: All dates must be valid and in YYYY-MM-DD format. </li>
+                            <li><strong>Amount</strong>: All values must be numeric, positive or negative, representing the amount. Unrealistically large amounts will cause an error.</li>
+                            <li><strong>Description</strong>: Not necessary, but contains a brief text description of the transaction that doesn't take up  more than one cell. </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingInstructions">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInstructions" aria-expanded="false" aria-controls="collapseInstructions">
+                        How to Generate a CSV Link
+                    </button>
+                </h2>
+                <div id="collapseInstructions" class="accordion-collapse collapse" aria-labelledby="headingInstructions" data-bs-parent="#csvAccordion">
+                    <div class="accordion-body">
+                        <p>Follow these steps to generate a CSV link:</p>
+                        <ul>
+                            <li>
+                                <strong>For Google Sheets:</strong>
+                                <ol>
+                                    <li>Open your sheet in Google Sheets.</li>
+                                    <li>Click <strong>File &gt; Share &gt; Publish to the web</strong>.</li>
+                                    <li>Select the sheet to publish, choose <code>.csv</code> format, and copy the generated link.</li>
+                                </ol>
+                            </li>
+                            <li>
+                                <strong>For Excel:</strong>
+                                <ol>
+                                    <li>Save your file as <code>.csv</code> (File &gt; Save As &gt; CSV).</li>
+                                    <li>Upload it to a file-sharing service (e.g., Google Drive, Dropbox, or OneDrive).</li>
+                                    <li>Generate a shareable link and ensure it points to the CSV file.</li>
+                                </ol>
+                            </li>
+                            <li>
+                                <strong>For Any Other Sheet Editor:</strong>
+                                <ul>
+                                    <li>If you don't know how to generate a csv link from your file, you can use google and youtube to help you.</li>
+                                </ul>
+                                <strong>Make sure the link can be publiciy accessesd and does not require authenticaiton.</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
