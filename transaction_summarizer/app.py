@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, Response, send_file
 from cleanup_data import cleanup_upload_folder
-from transaction_summarizer.validation import is_valid_sample_gs
+from transaction_summarizer.validation_utils import is_valid_sample_gs
 from calculations import calculate_statistics
 import pandas as pd
 import os
