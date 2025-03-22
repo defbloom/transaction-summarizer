@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, Response, send_file
 from cleanup_data import cleanup_upload_folder
-from validation import is_valid_sample_gs
+from validation import validate_sample_data
 from calculations import calculate_statistics
 import pandas as pd
 import os
@@ -32,7 +32,7 @@ def upload():
 
         try:
             # Validate the URL
-            is_valid, data, skipped_rows = is_valid_sample_gs(csv_url)
+            is_valid, data, skipped_rows = validate_sample_data(csv_url)
             if not is_valid:
                 return render_template('error.html', error=ERROR_MESSAGE)
 
