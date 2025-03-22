@@ -4,7 +4,7 @@ import io  # Used to convert csv data into an object to be read and processed by
 
 # Function to validate the provided Google Sheets CSV link
 
-def validate_sample_data(file_or_url):
+def is_valid_sample_gs(file_or_url):
 
     print("Loaded validation.py")
     print("Available symbols:", dir())
